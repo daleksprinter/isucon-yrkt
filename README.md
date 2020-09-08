@@ -15,13 +15,9 @@ ln -sfv ${app_dir} /etc/mysql/mysql.conf
 ```
 3. commit & pushしておく
 
-## 各種スクリプト作成
-アプリケーションのディレクトリにMakefile作る
-1. ベンチマーク
-2. ログローテート
-```
-cp /var/log/nginx/access.log access.log.$(date "+%Y%m%d%H%M%S").bak
-```
+## アプリケーション切り替え
+`sudo systemctl start {go_app}`
+`sudo systemctl enable {go_app}`
 
 ## kataribeをインストール
 ##### Repo `https://github.com/matsuu/kataribe`
@@ -59,6 +55,28 @@ show variables like 'slow%';
 sudo mysqldumpslow -s t /var/log/mysql/mysql-slow.sql > mysql-log-profile
 ```
 
+## pprof
+1. `go tool pprofでpprof入っているか確認する`
+2. アプリケーションソースに
+```
+_ "net/http/pprof"
+```
+と
+```
+go func() {
+        log.Println(http.ListenAndServe("localhost:6060", nil))
+    }()
+```
+を追加する
+
+3. ベンチマークを回しながら
+```
+go tool pprof ${app_bin} http://localhost:6060/debug/pprof/profile?seconds=60
+```
+でプロファイリングを行う
+4. `go tool pprof -pdf ~/pprof/hogehoge.pprof > pprof.pdf`
+5. slackcatする
+
 ## Slackcatをインストール
 ##### Repo `https://github.com/bcicen/slackcat`
 1. Install
@@ -72,3 +90,11 @@ sudo chmod +x /usr/local/bin/slackcat
 3. Slackに投稿
 - アクセスログプロファイル `slackcat --channel isucon-log access-log-profile`
 - MySQLダンプログプロファイル `slackcat --channel isucon-log mysql-log-profile`
+
+## 各種スクリプト作成
+アプリケーションのディレクトリにMakefile作る
+1. ベンチマーク
+2. ログローテート
+- アクセスログ `cp /var/log/nginx/access.log /var/log/nginx/access.log.$(date "+%Y%m%d%H%M%S").bak && :>/var/log/nginx/access.log`
+- MySQLログ `cp /var/log/mysql/mysql-slow.sql /var/log/mysql/mysql.log.$(date "+%Y%m%d%H%M%S").bak && :>/var/log/mysql/mysql-slow.sql`
+3. ミドルウェア再起動
