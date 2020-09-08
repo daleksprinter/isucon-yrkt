@@ -74,7 +74,9 @@ go func() {
 go tool pprof ${app_bin} http://localhost:6060/debug/pprof/profile?seconds=60
 ```
 でプロファイリングを行う
+
 4. `go tool pprof -pdf ~/pprof/hogehoge.pprof > pprof.pdf`
+
 5. slackcatする
 
 ## Slackcatをインストール
